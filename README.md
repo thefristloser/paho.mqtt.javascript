@@ -72,42 +72,69 @@ The client should work in any browser fully supporting WebSockets, [http://caniu
 The included code below is a very basic sample that connects to a server using WebSockets and subscribes to the topic ```World```, once subscribed, it then publishes the message ```Hello``` to that topic. Any messages that come into the subscribed topic will be printed to the Javascript console.
 
 This requires the use of a broker that supports WebSockets natively, or the use of a gateway that can forward between WebSockets and TCP.
-
+### web端示例
+超强健壮。断网、宕机自动重连。
 ```JS
-// Create a client instance
-var client = new Paho.MQTT.Client(location.hostname, Number(location.port), "clientId");
+    var options = {
+      timeout: 3,
+      userName: "name",
+      password: "pwd",
+      mqttVersion: 4,
+      keepAliveInterval: 5,
+      onSuccess: onConnect,
+      onFailure: onFailure
+    };
+     options.useSSL = true;
+     var wsport = 3301;
+     
+     //如果是小程序， -----------------------------    ------       web 可以改成wxMini
+     var client = new Paho.Client("192.168.1.135", wsport, "/ws", "web_" + options.userName + "-" + parseInt(Math.random() * 100, 10));
+    client.onConnectionLost = onConnectionLost;
+    client.onMessageArrived = onMessageArrived;
+    
+    //打印日志，正式环境去掉
+     client.trace=function(obj){
+      console.log(obj.severity + "  " + obj.message);
+    }
 
-// set callback handlers
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
+    function connToMqtt() {
+      client.connect(options);
+    }
+    connToMqtt();
+     function onConnect() {
+      // Once a connection has been made, make a subscription and send a message.
+      console.log("onConnect");
+      client.subscribe("hole",{
+        onSuccess:function(){
+          client.publish("hole","*********通则不痛，痛则不通************");
+        }
+      });
+    }
+    // called when the client loses its connection
+    function onConnectionLost(responseObject) {
+      if (responseObject.errorCode !== 0) {
+        console.log("onConnectionLost:" + responseObject.errorMessage);
+      }
+      connToMqtt();
+    }
 
-// connect the client
-client.connect({onSuccess:onConnect});
-
-
-// called when the client connects
-function onConnect() {
-  // Once a connection has been made, make a subscription and send a message.
-  console.log("onConnect");
-  client.subscribe("World");
-  message = new Paho.MQTT.Message("Hello");
-  message.destinationName = "World";
-  client.send(message);
-}
-
-// called when the client loses its connection
-function onConnectionLost(responseObject) {
-  if (responseObject.errorCode !== 0) {
-    console.log("onConnectionLost:"+responseObject.errorMessage);
-  }
-}
-
-// called when a message arrives
-function onMessageArrived(message) {
-  console.log("onMessageArrived:"+message.payloadString);
-}
+    // called when a message arrives
+    function onMessageArrived(message) {
+      console.log(message.payloadString);
+      
+    }
+    function onFailure(responseObject) {
+      console.log(responseObject);
+      connToMqtt();
+    }
 ```
+### 小程端示例
+```
+//将paho.mqtt-WxMini.js拷贝到小程序utils文件夹下，声明
+var Paho = require('../../utils/mqttjs')
 
+//接下来的代码和上面web端的一模一样了
+```
 ## Breaking Changes
 
 Previously the Client's Namepsace was `Paho.MQTT`, as of version 1.1.0 (develop branch) this has now been simplified to `Paho`.
