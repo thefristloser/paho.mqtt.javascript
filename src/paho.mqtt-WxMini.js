@@ -680,14 +680,14 @@
             // Check dependencies are satisfied in this browser.
             if (!("WebSocket" in global && global.WebSocket !== null)) {
                 if (!("wx" in global && global.wx != null && global.wx.connectSocket != null)) {//兼容微信socket
+                var the=this;
                     WebSocket=global.WebSocket = function (url, protocols) {
                         var wxSocket = wx.connectSocket({ url: url, protocols: protocols
                           , success:function(r){
-                            console.log("--------------success:connect " + r)
-                            console.log(r)
+                            the._trace("socket.connect","",r);
                           },
                           fail:function(r){
-                            console.log("--------------fail:connect" + r)
+                            the._trace("socket.fail", "", r);
                           }
                          })
                     
@@ -978,13 +978,13 @@
             this._wsuri = wsurl;
             this.connected = false;
 
-
+         
             if (this.connectOptions.mqttVersion < 4) {
               this.socket = new WebSocket(wsurl, ["mqttv3.1"]);
             } else {
               this.socket = new WebSocket(wsurl, ["mqtt"]);
             }
-            
+         
             this.socket.binaryType = "arraybuffer";
           this.socket.onOpen(scope(this._on_socket_open, this));
           this.socket.onMessage(scope(this._on_socket_message, this));
@@ -1513,12 +1513,16 @@
 
             if (this.socket) {
                 // Cancel all socket callbacks so that they cannot be driven again by this socket.
-                this.socket.onopen = null;
-                this.socket.onmessage = null;
-                this.socket.onerror = null;
-                this.socket.onclose = null;
-                if (this.socket.readyState === 1)
-                    this.socket.close();
+                this.socket.onOpen(null);
+              this.socket.onMessage(null);
+              this.socket.onError(null);
+              this.socket.onClose(null);
+              var the=this;
+                    this.socket.close({
+                      success:function(){
+                        the._trace("socket.closed");
+                      }
+                    });
                 delete this.socket;
             }
 
