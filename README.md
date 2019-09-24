@@ -125,7 +125,6 @@ This requires the use of a broker that supports WebSockets natively, or the use 
     }
     function onFailure(responseObject) {
       console.log(responseObject);
-      connToMqtt();
     }
 ```
 ### 小程端示例
