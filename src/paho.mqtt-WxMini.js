@@ -994,7 +994,7 @@
             return function(msg){
               the.socket.send({ data: msg, success:function(r){
                 the._trace("socket send data","success",r);
-              }, fail:function(){
+              }, fail:function(r){
                 the._trace("socket send data", "fail", r);
               }});
             }
